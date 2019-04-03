@@ -1,5 +1,5 @@
 <raytracer>
-	<buffer width="400" height="400" color="white"/>
+	<buffer width="400" height="400"/>
 	<background type="color">
 		<color r="255" g="0" b="0"/>
 		<color r="0" g="255" b="0"/>

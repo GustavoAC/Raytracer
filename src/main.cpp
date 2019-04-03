@@ -3,8 +3,13 @@
 #include "xmlParser.h"
 
 int main(int argc, char const* argv[]) {
+    if (argc < 2) {
+        std::cout << "Please insert the xml description path as an argument" << std::endl;
+        return 1;
+    }
+
     std::cout << "Creating Parser...\n";
-    auto parser = XmlParser::instantiate("example.xml");
+    auto parser = XmlParser::instantiate(argv[1]);
 
     std::cout << "Reading Buffer...\n";
     auto buffer = parser->getBuffer();
@@ -12,8 +17,8 @@ int main(int argc, char const* argv[]) {
     auto background = parser->getBackground();
 
     std::cout << "Painting buffer...\n";
-    
-    for (int i = 0 ; i < buffer->getWidth(); i++) {
+
+    for (int i = 0; i < buffer->getWidth(); i++) {
         for (int j = 0; j < buffer->getHeight(); j++) {
             buffer->setPixel(i, j,
                              background->getColor(float(i) / buffer->getWidth(),
@@ -21,7 +26,10 @@ int main(int argc, char const* argv[]) {
         }
     }
 
-    buffer->writeToFile("background_test");
+    if (argc > 2)
+        buffer->writeToFile(argv[2]);
+    else
+        buffer->writeToFile(argv[1]);
 
     return 0;
 }
