@@ -16,10 +16,30 @@ bin/exe example.xml example
 ## Linguagem de Descrição
 O arquivo de descrição lê objetos a partir do arquivo XML fornecido e os desenha na imagem final. A seguir são descritos os tipos de objetos existentes.
 
-### Buffer
-Define o tamanho da imagem a ser gerada
-* width: Largura do imagem, obrigatório
-* height: Altura do imagem, obrigatório
+### Camera
+Define o tipo da câmera que será utilizada. Tem como elementos internos: Position, Target, Up, Width, Height, Vpdim, Fovy, Aspect e Fdistance. Atributos:
+* type: Tipo da câmera a ser utilizada. Os valores possíveis são "orthographic" e "perspective". obrigatório.
+
+### Position, Target e Up
+Elementos internos da tag câmera que representam, respectivamente, a sua posição no mundo, o ponto central para o qual a câmera está focado, e o vetor que indica "cima", isto é, em qual direção a câmera alinhará seu topo. Os 3 objetos são pontos/vetores num plano 3D, por isso têm os seguintes atributos:
+* x: coordenada x.
+* y: coordenada y.
+* z: coordenada z.
+
+### Width e Height
+Indicam a largura e a altura da imagem a ser gerada pela câmera, seu único atributo está a seguir:
+* value: Valor da altura/largura.
+
+### Vpdim
+Indicam as dimensões a serem captadas pela câmera ortogonal, não é utilizada na câmera com perspectiva. Atributos:
+* l: limite esquerdo da captura (left).
+* r: limite direito da captura (right).
+* b: limite inferior da captura (bottom).
+* t: limite superior da captura (top).
+
+### Fovy, Aspect, Fdistance
+Indicam, respectivamente, o campo de visão vertical, o aspecto de razão da imagem, e sua distância focal. Utilizados apenas na câmera com perspectiva. Seu único atributo é o valor de cada um dos mesmos:
+* value: Valor do elemento.
 
 ### Background
 Define o background que será utilizado para preencher o buffer caso um raio não atinha nenhum objeto. Atributos:
@@ -42,7 +62,18 @@ Define uma cor no padrão RGB. Seus atributos são:
 No arquivo de descrição a seguir é possível ver todos os tipos de objetos sendo utilizado ao mesmo tempo.
 ```` xml
 <raytracer>
-	<buffer width="400" height="400"/>
+	<camera type="perspective">
+		<position x="0" y="0" z="0"/> <!--- located at the origin -->
+		<target x="0" y="0" z="-10"/> <!--- looking down the -Z axis -->
+		<up x="0" y="1" z="1"/><!--- the camera's up vector -->
+		<!--- Specific parameters for perspective -->
+		<fovy value="45.0"/>
+        <aspect value="1.33"/>
+        <fdistance value="1"/>
+		<!--- Retina/image dimensions -->
+		<width value="800"/>
+		<height value="600"/>
+	</camera>
 	<background type="color">
 		<color r="255" g="0" b="0"/>
 		<color r="0" g="255" b="0"/>

@@ -1,24 +1,21 @@
 #include "xmlParser.h"
+#include "orthographic_camera.h"
+#include "perspective_camera.h"
 
 std::shared_ptr<Background> XmlParser::getBackground() {
     if (m_topElement == nullptr) return nullptr;
-    TiXmlElement *backgroundNode = nullptr;
-    for (TiXmlNode *pChild = m_topElement->FirstChild(); pChild != 0 and backgroundNode == nullptr;
-         pChild = pChild->NextSibling()) {
-        if (pChild->Type() == TiXmlNode::TINYXML_ELEMENT) {
-            TiXmlElement *el = pChild->ToElement();
-            if (std::string(el->Value()) == "background") backgroundNode = el;
-        }
-    }
+    TiXmlNode *backgroundNode = getChildWithName(m_topElement, "background");
 
     if (backgroundNode == nullptr) return nullptr;
 
-    TiXmlAttribute *attr = backgroundNode->FirstAttribute();
+    TiXmlElement *backgroundElement = backgroundNode->ToElement();
+    TiXmlAttribute *attr = backgroundElement->FirstAttribute();
     while (attr) {
         if (std::string(attr->Name()) == "type") {
-            if (std::string(attr->Value()) == "color") return parseColorBackground(backgroundNode);
+            if (std::string(attr->Value()) == "color")
+                return parseColorBackground(backgroundElement);
             if (std::string(attr->Value()) == "texture")
-                return parseTextureBackground(backgroundNode);
+                return parseTextureBackground(backgroundElement);
         }
 
         attr = attr->Next();
@@ -54,35 +51,112 @@ std::shared_ptr<Background> XmlParser::parseTextureBackground(TiXmlElement *back
     return nullptr;
 }
 
-std::shared_ptr<Buffer> XmlParser::getBuffer() {
+std::shared_ptr<Camera> XmlParser::getCamera() {
     if (m_topElement == nullptr) return nullptr;
-    int width = -1;
-    int height = -1;
-    int ival;
 
-    TiXmlNode *bufferNode = nullptr;
-    for (TiXmlNode *pChild = m_topElement->FirstChild(); pChild != 0 and bufferNode == nullptr;
-         pChild = pChild->NextSibling()) {
-        if (pChild->Type() == TiXmlNode::TINYXML_ELEMENT) {
-            if (std::string(pChild->Value()) == "buffer") bufferNode = pChild;
-        }
+    TiXmlNode *cameraNode = getChildWithName(m_topElement, "camera");
+    if (cameraNode == nullptr) return nullptr;
+
+    TiXmlAttribute *cameraType = getAttribute(cameraNode->ToElement(), "type");
+    if (cameraType == nullptr) return nullptr;
+
+    bool isOrthographic = (std::string(cameraType->Value()) == "orthographic");
+    auto position = getVector(cameraNode, "position");
+    auto target = getVector(cameraNode, "target");
+    auto up = getVector(cameraNode, "up");
+    auto width = getChildWithName(cameraNode, "width");
+    auto height = getChildWithName(cameraNode, "height");
+    if (position == nullptr || target == nullptr || up == nullptr || width == nullptr ||
+        height == nullptr)
+        return nullptr;
+
+    auto widthAttr = getAttribute(width->ToElement(), "value");
+    auto heightAttr = getAttribute(height->ToElement(), "value");
+    if (widthAttr == nullptr || heightAttr == nullptr) return nullptr;
+
+    int widthVal = -1;
+    int heightVal = -1;
+    widthAttr->QueryIntValue(&widthVal);
+    heightAttr->QueryIntValue(&heightVal);
+    if (widthVal < 0 || heightVal < 0) return nullptr;
+
+    Camera *camera = nullptr;
+    if (isOrthographic) {
+        auto vpdimNode = getChildWithName(cameraNode, "vpdim");
+        if (vpdimNode == nullptr) return nullptr;
+        auto vpdim = vpdimNode->ToElement();
+
+        auto l = getAttribute(vpdim, "l");
+        auto r = getAttribute(vpdim, "r");
+        auto b = getAttribute(vpdim, "b");
+        auto t = getAttribute(vpdim, "t");
+        if (l == nullptr || r == nullptr || b == nullptr || t == nullptr) return nullptr;
+
+        double lVal, rVal, bVal, tVal;
+        l->QueryDoubleValue(&lVal);
+        r->QueryDoubleValue(&rVal);
+        b->QueryDoubleValue(&bVal);
+        t->QueryDoubleValue(&tVal);
+
+        camera = new OrthographicCamera(widthVal, heightVal, *position,
+                                                             *target, *up, lVal, rVal, bVal, tVal);
+    } else {
+        auto fovyNode = getChildWithName(cameraNode, "fovy");
+        auto aspectNode = getChildWithName(cameraNode, "aspect");
+        auto fdistanceNode = getChildWithName(cameraNode, "fdistance");
+        if (fovyNode == nullptr || aspectNode == nullptr) return nullptr;
+
+        auto fovyAttr = getAttribute(fovyNode->ToElement(), "value");
+        auto aspectAttr = getAttribute(aspectNode->ToElement(), "value");
+        auto fdistanceAttr = (fdistanceNode != nullptr)
+                                 ? getAttribute(fdistanceNode->ToElement(), "value")
+                                 : nullptr;
+        if (fovyAttr == nullptr || aspectAttr == nullptr) return nullptr;
+
+        double fovy, aspect, fdistance = 1.0;
+        fovyAttr->QueryDoubleValue(&fovy);
+        aspectAttr->QueryDoubleValue(&aspect);
+        if (fdistanceAttr != nullptr) fdistanceAttr->QueryDoubleValue(&fdistance);
+
+        camera = new PerspectiveCamera(widthVal, heightVal, *position, *target,
+                                                            *up, fovy, aspect, fdistance);
     }
 
-    if (bufferNode == nullptr) return nullptr;
+    return std::shared_ptr<Camera>(camera);
+}
 
-    TiXmlAttribute *attr = bufferNode->ToElement()->FirstAttribute();
+std::shared_ptr<vec3> XmlParser::getVector(TiXmlNode *parent, const std::string &vecName) {
+    TiXmlNode *vecNode = getChildWithName(parent, vecName);
+    if (vecNode == nullptr) return nullptr;
+
+    double xVal, yVal, zVal;
+    for (TiXmlAttribute *attr = vecNode->ToElement()->FirstAttribute(); attr != nullptr;
+         attr = attr->Next()) {
+        std::string attrName(attr->Name());
+        if (attrName == "x") attr->QueryDoubleValue(&xVal);
+        if (attrName == "y") attr->QueryDoubleValue(&yVal);
+        if (attrName == "z") attr->QueryDoubleValue(&zVal);
+    }
+
+    return std::make_shared<vec3>(vec3(xVal, yVal, zVal));
+}
+
+TiXmlNode *XmlParser::getChildWithName(TiXmlNode *parent, const std::string &name) {
+    TiXmlNode *target = nullptr;
+    for (TiXmlNode *pChild = parent->FirstChild(); pChild != 0 and target == nullptr;
+         pChild = pChild->NextSibling())
+        if (pChild->Type() == TiXmlNode::TINYXML_ELEMENT && std::string(pChild->Value()) == name)
+            target = pChild;
+
+    return target;
+}
+
+TiXmlAttribute *XmlParser::getAttribute(TiXmlElement *parent, const std::string &name) {
+    TiXmlAttribute *attr = parent->FirstAttribute();
     while (attr) {
-        if (std::string(attr->Name()) == "width" && attr->QueryIntValue(&ival) == TIXML_SUCCESS)
-            width = ival;
-        else if (std::string(attr->Name()) == "height" &&
-                 attr->QueryIntValue(&ival) == TIXML_SUCCESS)
-            height = ival;
-
+        if (std::string(attr->Name()) == name) return attr;
         attr = attr->Next();
     }
 
-    if (width > 0 && height > 0)
-        return std::make_shared<Buffer>(Buffer(width, height));
-    else
-        return nullptr;
+    return nullptr;
 }
