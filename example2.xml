@@ -1,20 +1,41 @@
 <raytracer>
 	<camera type="perspective">
-		<position x="0" y="0" z="0"/> <!--- located at the origin -->
-		<target x="0" y="0" z="-10"/> <!--- looking down the -Z axis -->
-		<up x="0" y="1" z="1"/><!--- the camera's up vector -->
+		<!--- located at the origin -->
+		<position x="0" y="0" z="0"/>
+		<!--- looking down the -Z axis -->
+		<target x="0" y="0" z="-10"/>
+		<!--- the camera's up vector -->
+		<up x="0" y="1" z="1"/>
 		<!--- Specific parameters for perspective -->
-		<fovy value="45.0"/>
-        <aspect value="1.33"/>
-        <fdistance value="1"/>
+		<fovy value="65.0"/>
+		<aspect value="1.33"/>
+		<fdistance value="1"/>
 		<!--- Retina/image dimensions -->
 		<width value="800"/>
 		<height value="600"/>
 	</camera>
 	<background type="color">
-		<color r="255" g="0" b="0"/>
-		<color r="0" g="255" b="0"/>
-		<color r="0" g="0" b="255"/>
-		<color r="100" g="100" b="100"/>
+		<!-- top left-->
+		<color r="18" g="10" b="143"/>
+		<!-- top right -->
+		<color r="18" g="10" b="143"/>
+		<!-- bottom right -->
+		<color r="153" g="204" b="255"/>
+		<!-- bottom left -->
+		<color r="153" g="204" b="255"/>
 	</background>
+	<scene>
+		<object type="sphere" name="sphere1">
+			<radius value="0.4"/>
+			<center x="-1.0" y="0.5" z="-5"/>
+		</object>
+		<object type="sphere" name="sphere2">
+			<radius value="0.4"/>
+			<center x="1.0" y="-0.5" z="-8"/>
+		</object>
+		<object type="sphere" name="sphere3">
+			<radius value="0.4"/>
+			<center x="-1.0" y="-1.5" z="-3.5"/>
+		</object>
+	</scene>
 </raytracer>

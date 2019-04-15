@@ -12,10 +12,10 @@ class Ray {
         /* Empty */
     }
 
-    vec3 operator()(float t) { return origin + (t * direction); }
+    vec3 operator()(float t) const { return origin + (t * direction); }
 
-    point3 getOrigin() { return origin; }
-    vec3 getDirection() { return direction; }
+    point3 getOrigin() const { return origin; }
+    vec3 getDirection() const { return direction; }
 
     friend std::ostream &operator<<(std::ostream &os, const Ray &t) {
         os << "[o=" << t.origin << ", d=" << t.direction << "]";

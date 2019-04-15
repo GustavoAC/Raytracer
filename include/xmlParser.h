@@ -1,12 +1,14 @@
 #pragma once
 #include <iostream>
 #include <memory>
+#include <vector>
 #include "background.h"
 #include "buffer.h"
 #include "camera.h"
-#include "vec3.h"
 #include "config.h"
+#include "primitive.h"
 #include "tinyxml.h"
+#include "vec3.h"
 
 class XmlParser {
    private:
@@ -20,8 +22,10 @@ class XmlParser {
 
     std::shared_ptr<Background> parseColorBackground(TiXmlElement *backgroundNode);
     std::shared_ptr<Background> parseTextureBackground(TiXmlElement *backgroundNode);
-    TiXmlNode* getChildWithName(TiXmlNode *parent, const std::string &name);
-    TiXmlAttribute* getAttribute(TiXmlElement *parent, const std::string &name);
+    TiXmlNode *getChildWithName(TiXmlNode *parent, const std::string &name);
+    TiXmlAttribute *getAttribute(TiXmlElement *parent, const std::string &name);
+    std::shared_ptr<Primitive> getPrimitive(TiXmlElement *parent);
+    std::shared_ptr<Primitive> getSphere(TiXmlElement *parent);
 
    public:
     static std::shared_ptr<XmlParser> instantiate(std::string _filename) {
@@ -49,5 +53,6 @@ class XmlParser {
 
     std::shared_ptr<Background> getBackground();
     std::shared_ptr<Camera> getCamera();
-    std::shared_ptr<vec3> getVector(TiXmlNode* parent, const std::string &vecName);
+    std::vector<std::shared_ptr<Primitive>> getScene();
+    std::shared_ptr<vec3> getVector(TiXmlNode *parent, const std::string &vecName);
 };

@@ -1,6 +1,7 @@
 #include "xmlParser.h"
 #include "orthographic_camera.h"
 #include "perspective_camera.h"
+#include "sphere.h"
 
 std::shared_ptr<Background> XmlParser::getBackground() {
     if (m_topElement == nullptr) return nullptr;
@@ -98,8 +99,8 @@ std::shared_ptr<Camera> XmlParser::getCamera() {
         b->QueryDoubleValue(&bVal);
         t->QueryDoubleValue(&tVal);
 
-        camera = new OrthographicCamera(widthVal, heightVal, *position,
-                                                             *target, *up, lVal, rVal, bVal, tVal);
+        camera = new OrthographicCamera(widthVal, heightVal, *position, *target, *up, lVal, rVal,
+                                        bVal, tVal);
     } else {
         auto fovyNode = getChildWithName(cameraNode, "fovy");
         auto aspectNode = getChildWithName(cameraNode, "aspect");
@@ -118,11 +119,57 @@ std::shared_ptr<Camera> XmlParser::getCamera() {
         aspectAttr->QueryDoubleValue(&aspect);
         if (fdistanceAttr != nullptr) fdistanceAttr->QueryDoubleValue(&fdistance);
 
-        camera = new PerspectiveCamera(widthVal, heightVal, *position, *target,
-                                                            *up, fovy, aspect, fdistance);
+        camera = new PerspectiveCamera(widthVal, heightVal, *position, *target, *up, fovy, aspect,
+                                       fdistance);
     }
 
     return std::shared_ptr<Camera>(camera);
+}
+
+std::vector<std::shared_ptr<Primitive>> XmlParser::getScene() {
+    std::vector<std::shared_ptr<Primitive>> retVector;
+    if (m_topElement == nullptr) return retVector;
+
+    TiXmlNode *sceneNode = getChildWithName(m_topElement, "scene");
+    if (sceneNode == nullptr) return retVector;
+
+    for (TiXmlNode *pChild = sceneNode->FirstChild(); pChild != 0; pChild = pChild->NextSibling()) {
+        if (pChild->Type() == TiXmlNode::TINYXML_ELEMENT &&
+            std::string(pChild->Value()) == "object") {
+            auto primitive = getPrimitive(pChild->ToElement());
+            if (primitive != nullptr) retVector.push_back(primitive);
+        }
+    }
+
+    return retVector;
+}
+
+std::shared_ptr<Primitive> XmlParser::getPrimitive(TiXmlElement *parent) {
+    if (parent == nullptr) return nullptr;
+
+    auto typeAttr = getAttribute(parent->ToElement(), "type");
+    if (typeAttr == nullptr) return nullptr;
+
+    auto type = std::string(typeAttr->Value());
+    if (type == "sphere") return getSphere(parent);
+
+    return nullptr;
+}
+
+std::shared_ptr<Primitive> XmlParser::getSphere(TiXmlElement *parent) {
+    if (parent == nullptr) return nullptr;
+
+    double radius = 0;
+    auto radiusNode = getChildWithName(parent, "radius");
+    auto center = getVector(parent, "center");
+    if (radiusNode == nullptr || center == nullptr) return nullptr;
+
+    auto radiusAttr = getAttribute(radiusNode->ToElement(), "value");
+    if (radiusAttr == nullptr) return nullptr;
+
+    radiusAttr->QueryDoubleValue(&radius);
+
+    return std::shared_ptr<Primitive>(new Sphere(radius, *center));
 }
 
 std::shared_ptr<vec3> XmlParser::getVector(TiXmlNode *parent, const std::string &vecName) {

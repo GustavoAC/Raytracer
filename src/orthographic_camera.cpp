@@ -3,7 +3,7 @@
 
 Ray OrthographicCamera::generateRay(double i, double j) {
     double ii = i * width;
-    double jj = j * width;
+    double jj = j * height;
 
     double u = l + ((r - l) * (ii + 0.5)) / width;
     double v = b + ((t - b) * (jj + 0.5)) / height;
