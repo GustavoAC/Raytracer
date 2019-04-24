@@ -30,7 +30,7 @@ class Camera {
 
         wVec = unit_vector(-gaze);
         uVec = unit_vector(cross(vUp, wVec));
-        vVec = unit_vector(cross(wVec, uVec));
+        vVec = unit_vector(cross(uVec, wVec));
     }
 
     /**
