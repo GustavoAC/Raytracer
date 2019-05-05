@@ -1,13 +1,11 @@
 #pragma once
+#include "geometricPrimitive.h"
 
-#include <memory>
-#include "material.h"
-#include "ray.h"
-
-class SurfaceInteraction;
-
-class Primitive {
+class Shape : public GeometricPrimitive {
  public:
+  Shape(const std::shared_ptr<Material>& _material)
+      : GeometricPrimitive(_material) {}
+
   virtual bool intersect(const Ray& r, SurfaceInteraction* si) const = 0;
 
   // Simpler & faster version of intersection that only return true/false.
