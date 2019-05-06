@@ -1,6 +1,7 @@
 #include "xmlParser.h"
 #include <unordered_map>
 #include "aggregatePrimitive.h"
+#include "depthMapIntegrator.h"
 #include "flatIntegrator.h"
 #include "flatMaterial.h"
 #include "orthographic_camera.h"
@@ -134,6 +135,9 @@ std::shared_ptr<Integrator> XmlParser::getIntegrator() {
   if (integratorType == "flat") {
     return std::shared_ptr<Integrator>(
         new FlatIntegrator(getCamera(), std::make_shared<Sampler>(Sampler())));
+  } else if (integratorType == "depthMap") {
+    return std::shared_ptr<Integrator>(new DepthMapIntegrator(
+        getCamera(), std::make_shared<Sampler>(Sampler())));
   }
 
   return nullptr;
