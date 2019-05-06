@@ -23,6 +23,7 @@ int main(int argc, char const* argv[]) {
   std::cout << "Reading Integrator...\n";
   auto integrator = parser->getIntegrator();
 
+  std::cout << "Rendering scene...\n";
   integrator->render(*scene);
 
   if (argc > 2)

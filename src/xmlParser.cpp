@@ -1,6 +1,7 @@
 #include "xmlParser.h"
 #include <unordered_map>
 #include "aggregatePrimitive.h"
+#include "flatIntegrator.h"
 #include "flatMaterial.h"
 #include "orthographic_camera.h"
 #include "perspective_camera.h"
@@ -109,12 +110,33 @@ std::shared_ptr<Scene> XmlParser::getScene() {
     }
   }
 
-  AggregatePrimitive ap;
-  ap.primitives = primitives;
-  Scene scene(std::make_shared<Primitive>(ap),
-              std::vector<std::shared_ptr<Light>>());
+  AggregatePrimitive *ap = new AggregatePrimitive();
+  ap->primitives = primitives;
+  return std::make_shared<Scene>(Scene(std::shared_ptr<Primitive>(ap),
+                                       std::vector<std::shared_ptr<Light>>(),
+                                       background));
+}
 
-  return std::make_shared<Scene>(scene);
+std::shared_ptr<Integrator> XmlParser::getIntegrator() {
+  if (m_topElement == nullptr) return nullptr;
+
+  TiXmlNode *runningNode = getChildWithName(m_topElement, "running");
+  if (runningNode == nullptr) return nullptr;
+
+  TiXmlNode *integratorNode = getChildWithName(runningNode, "integrator");
+  if (integratorNode == nullptr) return nullptr;
+
+  auto integratorElement = integratorNode->ToElement();
+  auto integratorTypeAttr = getAttribute(integratorElement, "type");
+  if (integratorTypeAttr == nullptr) return nullptr;
+  auto integratorType = std::string(integratorTypeAttr->Value());
+
+  if (integratorType == "flat") {
+    return std::shared_ptr<Integrator>(
+        new FlatIntegrator(getCamera(), std::make_shared<Sampler>(Sampler())));
+  }
+
+  return nullptr;
 }
 
 std::shared_ptr<Background> XmlParser::getBackground(TiXmlNode *parent) {
@@ -158,7 +180,7 @@ void XmlParser::addMaterial(TiXmlNode *parent) {
       p.setB(ival);
   }
 
-  materials.push_back(std::make_shared<Material>(FlatMaterial(name, p)));
+  materials.push_back(std::shared_ptr<Material>(new FlatMaterial(name, p)));
 }
 
 std::shared_ptr<Background> XmlParser::parseColorBackground(

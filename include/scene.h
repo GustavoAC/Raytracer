@@ -18,8 +18,9 @@ class Scene {
   //=== Public interface
  public:
   Scene(std::shared_ptr<Primitive> ag,
-        const std::vector<std::shared_ptr<Light>>& ls)
-      : lights{ls}, aggregate{ag} { /* empty */
+        const std::vector<std::shared_ptr<Light>>& ls,
+        const std::shared_ptr<Background>& _background)
+      : lights{ls}, background{_background}, aggregate{ag} { /* empty */
   }
   /// Determines the intersection info; return true if there is an intersection.
   bool intersect(const Ray& r, SurfaceInteraction* isect) const {

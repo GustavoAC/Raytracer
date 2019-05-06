@@ -1,6 +1,5 @@
 #pragma once
 #include "primitive.h"
-#include "shape.h"
 
 class GeometricPrimitive : public Primitive {
  protected:

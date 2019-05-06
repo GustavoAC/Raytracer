@@ -12,7 +12,7 @@ class Sphere : public Shape {
  public:
   Sphere(float radius, const point3& center,
          const std::shared_ptr<Material>& material)
-      : m_radius(radius), m_center(center), Shape(material) { /* Empty */
+      : Shape(material), m_radius(radius), m_center(center) { /* Empty */
   }
 
   /**
