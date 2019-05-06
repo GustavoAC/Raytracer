@@ -34,6 +34,7 @@ class XmlParser {
   std::shared_ptr<vec3> getVector(TiXmlNode *parent,
                                   const std::string &vecName);
   void addMaterial(TiXmlNode *parent);
+  Pixel parseColor(TiXmlNode *parent);
 
  public:
   static std::shared_ptr<XmlParser> instantiate(std::string _filename) {

@@ -1,0 +1,60 @@
+<raytracer>
+    <camera type="perspective">
+        <!--- The camera frame -->
+        <position x="0" y="0" z="2"/>
+        <!--- located at the origin -->
+        <target x="0" y="0" z="-10"/>
+        <!--- looking down the -Z axis -->
+        <up x="0" y="1" z="1"/>
+        <!--- the camera's up vector -->
+        <!--- Specific parameters for perspective projection -->
+        <fovy value="65.0" />
+        <!--- The vertical field of view -->
+        <aspect value="1.33"/>
+        <!--- Optional parameter, aspect ration W/H -->
+        <fdistance value="1" />
+        <!--- The focal distance  -->
+        <!--- Retina/image dimensions -->
+        <width value="800"/>
+        <height value="600"/>
+    </camera>
+
+    <scene>
+        <background type="color">
+            <color r="255" g="255" b="255"/>
+        </background>
+        <object type="sphere" name="sphere1" material="green">
+            <radius value="20.0"/>
+            <center x="-1.0" y="0.5" z="-30"/>
+        </object>
+        <object type="sphere" name="sphere2" material="green">
+            <radius value="0.4"/>
+            <center x="1.0" y="-0.5" z="-8"/>
+        </object>
+        <object type="sphere" name="sphere3" material="gold">
+            <radius value="0.4"/>
+            <center x="-1.0" y="-1.5" z="-3.5"/>
+        </object>
+        <object type="sphere" name="sphere4" material="pink">
+            <radius value="2.0"/>
+            <center x="7.0" y="1.5" z="-10"/>
+        </object>
+        <!-- materials -->
+        <material type="flat" name="gold">
+            <diffuse r="236" g="124" b="17"/>
+        </material>
+        <material type="flat" name="green">
+            <diffuse r="42" g="201" b="51"/>
+        </material>
+        <material type="flat" name="pink">
+            <diffuse r="253" g="153" b="253"/>
+        </material>
+    </scene>
+    <running>        <!--- Running setup -->
+        <integrator type="depthMap">
+            <near r="255" g="0" b="0"/>
+            <far r="255" g="255" b="255"/>
+            <!--- Samples per pixel -->
+        </integrator>
+    </running>
+</raytracer>

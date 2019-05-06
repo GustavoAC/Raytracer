@@ -136,8 +136,11 @@ std::shared_ptr<Integrator> XmlParser::getIntegrator() {
     return std::shared_ptr<Integrator>(
         new FlatIntegrator(getCamera(), std::make_shared<Sampler>(Sampler())));
   } else if (integratorType == "depthMap") {
+    auto near = parseColor(getChildWithName(integratorNode, "near"));
+    auto far = parseColor(getChildWithName(integratorNode, "far"));
+
     return std::shared_ptr<Integrator>(new DepthMapIntegrator(
-        getCamera(), std::make_shared<Sampler>(Sampler())));
+        getCamera(), std::make_shared<Sampler>(Sampler()), near, far));
   }
 
   return nullptr;
@@ -294,4 +297,20 @@ TiXmlAttribute *XmlParser::getAttribute(TiXmlElement *parent,
   }
 
   return nullptr;
+}
+
+Pixel XmlParser::parseColor(TiXmlNode *parent) {
+  Pixel p;
+  int ival;
+  for (TiXmlAttribute *attr = parent->ToElement()->FirstAttribute();
+       attr != nullptr; attr = attr->Next()) {
+    std::string attrName(attr->Name());
+    if (attrName == "r" && attr->QueryIntValue(&ival) == TIXML_SUCCESS)
+      p.setR(ival);
+    if (attrName == "g" && attr->QueryIntValue(&ival) == TIXML_SUCCESS)
+      p.setG(ival);
+    if (attrName == "b" && attr->QueryIntValue(&ival) == TIXML_SUCCESS)
+      p.setB(ival);
+  }
+  return p;
 }
