@@ -4,6 +4,7 @@
 #include "depthMapIntegrator.h"
 #include "flatIntegrator.h"
 #include "flatMaterial.h"
+#include "normalMapIntegrator.h"
 #include "orthographic_camera.h"
 #include "perspective_camera.h"
 #include "sphere.h"
@@ -141,6 +142,9 @@ std::shared_ptr<Integrator> XmlParser::getIntegrator() {
 
     return std::shared_ptr<Integrator>(new DepthMapIntegrator(
         getCamera(), std::make_shared<Sampler>(Sampler()), near, far));
+  } else if (integratorType == "normalMap") {
+    return std::shared_ptr<Integrator>(new NormalMapIntegrator(
+        getCamera(), std::make_shared<Sampler>(Sampler())));
   }
 
   return nullptr;

@@ -48,6 +48,9 @@ class Sphere : public Shape {
     si->p = ray(bestT);
     si->primitive = this;
 
+    vec3 hitCoord = ray(bestT);
+    si->n = hitCoord - m_center;
+
     return true;
   }
 
