@@ -47,6 +47,7 @@ class Sphere : public Shape {
     si->t = bestT;
     si->p = ray(bestT);
     si->primitive = this;
+    si->wo = unit_vector(origin - direction);
 
     vec3 hitCoord = ray(bestT);
     si->n = hitCoord - m_center;

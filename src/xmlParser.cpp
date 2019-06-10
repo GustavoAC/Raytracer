@@ -1,13 +1,19 @@
 #include "xmlParser.h"
 #include <unordered_map>
 #include "aggregatePrimitive.h"
+#include "ambientLight.h"
+#include "blinnMaterial.h"
+#include "blinnPhongIntegrator.h"
 #include "depthMapIntegrator.h"
+#include "directionalLight.h"
 #include "flatIntegrator.h"
 #include "flatMaterial.h"
 #include "normalMapIntegrator.h"
 #include "orthographic_camera.h"
 #include "perspective_camera.h"
+#include "pointLight.h"
 #include "sphere.h"
+#include "spotLight.h"
 
 std::shared_ptr<Camera> XmlParser::getCamera() {
   if (m_topElement == nullptr) return nullptr;
@@ -61,20 +67,17 @@ std::shared_ptr<Camera> XmlParser::getCamera() {
         widthVal, heightVal, *position, *target, *up, lVal, rVal, bVal, tVal));
   } else {
     auto fovyNode = getChildWithName(cameraNode, "fovy");
-    auto aspectNode = getChildWithName(cameraNode, "aspect");
     auto fdistanceNode = getChildWithName(cameraNode, "fdistance");
-    if (fovyNode == nullptr || aspectNode == nullptr) return nullptr;
+    if (fovyNode == nullptr) return nullptr;
 
     auto fovyAttr = getAttribute(fovyNode->ToElement(), "value");
-    auto aspectAttr = getAttribute(aspectNode->ToElement(), "value");
     auto fdistanceAttr = (fdistanceNode != nullptr)
                              ? getAttribute(fdistanceNode->ToElement(), "value")
                              : nullptr;
-    if (fovyAttr == nullptr || aspectAttr == nullptr) return nullptr;
+    if (fovyAttr == nullptr) return nullptr;
 
-    double fovy, aspect, fdistance = 1.0;
+    double fovy, aspect = (double)widthVal / heightVal, fdistance = 1.0;
     fovyAttr->QueryDoubleValue(&fovy);
-    aspectAttr->QueryDoubleValue(&aspect);
     if (fdistanceAttr != nullptr) fdistanceAttr->QueryDoubleValue(&fdistance);
 
     camera = std::shared_ptr<Camera>(new PerspectiveCamera(
@@ -92,13 +95,14 @@ std::shared_ptr<Scene> XmlParser::getScene() {
 
   auto background = getBackground(sceneNode);
 
-  std::vector<std::shared_ptr<Material>> materials;
-
   for (auto child = sceneNode->FirstChild(); child != nullptr;
        child = child->NextSibling()) {
     if (child->Type() == TiXmlNode::TINYXML_ELEMENT &&
         std::string(child->Value()) == "material")
       addMaterial(child);
+    if (child->Type() == TiXmlNode::TINYXML_ELEMENT &&
+        std::string(child->Value()) == "light")
+      addLight(child);
   }
 
   std::vector<std::shared_ptr<Primitive>> primitives;
@@ -114,9 +118,8 @@ std::shared_ptr<Scene> XmlParser::getScene() {
 
   AggregatePrimitive *ap = new AggregatePrimitive();
   ap->primitives = primitives;
-  return std::make_shared<Scene>(Scene(std::shared_ptr<Primitive>(ap),
-                                       std::vector<std::shared_ptr<Light>>(),
-                                       background));
+  return std::make_shared<Scene>(
+      Scene(std::shared_ptr<Primitive>(ap), lights, background));
 }
 
 std::shared_ptr<Integrator> XmlParser::getIntegrator() {
@@ -145,6 +148,9 @@ std::shared_ptr<Integrator> XmlParser::getIntegrator() {
   } else if (integratorType == "normalMap") {
     return std::shared_ptr<Integrator>(new NormalMapIntegrator(
         getCamera(), std::make_shared<Sampler>(Sampler())));
+  } else if (integratorType == "blinn phong") {
+    return std::shared_ptr<Integrator>(new BlinnPhongIntegrator(
+        getCamera(), std::make_shared<Sampler>(Sampler())));
   }
 
   return nullptr;
@@ -172,7 +178,15 @@ std::shared_ptr<Background> XmlParser::getBackground(TiXmlNode *parent) {
 }
 
 void XmlParser::addMaterial(TiXmlNode *parent) {
-  // Assuming for now all materials are flat
+  auto typeAttr = getAttribute(parent->ToElement(), "type");
+  if (typeAttr == nullptr) return;
+  auto type = std::string(typeAttr->Value());
+
+  if (type == "flat") addFlatMaterial(parent);
+  if (type == "blinn") addBlinnMaterial(parent);
+}
+
+void XmlParser::addFlatMaterial(TiXmlNode *parent) {
   auto nameAttr = getAttribute(parent->ToElement(), "name");
   if (nameAttr == nullptr) return;
   auto name = std::string(nameAttr->Value());
@@ -192,6 +206,103 @@ void XmlParser::addMaterial(TiXmlNode *parent) {
   }
 
   materials.push_back(std::shared_ptr<Material>(new FlatMaterial(name, p)));
+}
+
+void XmlParser::addBlinnMaterial(TiXmlNode *parent) {
+  auto nameAttr = getAttribute(parent->ToElement(), "name");
+  if (nameAttr == nullptr) return;
+  auto name = std::string(nameAttr->Value());
+
+  auto diffuseVec = getVector(parent, "diffuse");
+  auto ambientVec = getVector(parent, "ambient");
+  auto specularVec = getVector(parent, "specular");
+  auto glossinessNode = getChildWithName(parent, "glossiness");
+  if (diffuseVec == nullptr || ambientVec == nullptr ||
+      specularVec == nullptr || glossinessNode == nullptr) {
+    std::cout << "Error while parsing blinn material, invalid settings\n";
+    return;
+  }
+
+  double glossiness;
+  auto glossinessElement = getChildWithName(parent, "glossiness")->ToElement();
+  auto glossinessAttr = getAttribute(glossinessElement, "value");
+  glossinessAttr->QueryDoubleValue(&glossiness);
+
+  materials.push_back(std::shared_ptr<Material>(new BlinnMaterial(
+      name, *diffuseVec, *ambientVec, *specularVec, glossiness)));
+}
+
+void XmlParser::addLight(TiXmlNode *parent) {
+  auto typeAttr = getAttribute(parent->ToElement(), "type");
+  if (typeAttr == nullptr) return;
+  auto type = std::string(typeAttr->Value());
+
+  if (type == "ambient") addAmbientLight(parent);
+  if (type == "point") addPointLight(parent);
+  if (type == "spot") addSpotLight(parent);
+  if (type == "directional") addDirectionalLight(parent);
+}
+
+void XmlParser::addAmbientLight(TiXmlNode *parent) {
+  auto intensityVec = getVector(parent, "intensity");
+  if (intensityVec == nullptr) {
+    std::cout << "Error reading ambient light\n";
+    return;
+  }
+
+  lights.push_back(std::shared_ptr<Light>(new AmbientLight(*intensityVec)));
+}
+
+void XmlParser::addPointLight(TiXmlNode *parent) {
+  auto intensityVec = getVector(parent, "intensity");
+  auto positionVec = getVector(parent, "position");
+  if (intensityVec == nullptr || positionVec == nullptr) {
+    std::cout << "Error reading point light\n";
+    return;
+  }
+
+  lights.push_back(
+      std::shared_ptr<Light>(new PointLight(*intensityVec, *positionVec)));
+}
+
+void XmlParser::addSpotLight(TiXmlNode *parent) {
+  auto intensityVec = getVector(parent, "intensity");
+  auto positionVec = getVector(parent, "position");
+  auto pointAtVec = getVector(parent, "point_at");
+  auto cutoffNode = getChildWithName(parent, "cutoff");
+  auto falloffNode = getChildWithName(parent, "falloff");
+  if (cutoffNode == nullptr || falloffNode == nullptr) {
+    std::cout << "Error reading spotlight\n";
+    return;
+  }
+
+  auto cutoffAttr = getAttribute(cutoffNode->ToElement(), "value");
+  auto falloffAttr = getAttribute(falloffNode->ToElement(), "value");
+  if (intensityVec == nullptr || positionVec == nullptr ||
+      pointAtVec == nullptr || cutoffAttr == nullptr ||
+      falloffAttr == nullptr) {
+    std::cout << "Error reading spotlight\n";
+    return;
+  }
+
+  int cutoff, falloff;
+  cutoffAttr->QueryIntValue(&cutoff);
+  falloffAttr->QueryIntValue(&falloff);
+
+  lights.push_back(std::shared_ptr<Light>(new SpotLight(
+      *intensityVec, *positionVec, *pointAtVec, cutoff, falloff)));
+}
+
+void XmlParser::addDirectionalLight(TiXmlNode *parent) {
+  auto intensityVec = getVector(parent, "intensity");
+  auto positionVec = getVector(parent, "position");
+  if (intensityVec == nullptr || positionVec == nullptr) {
+    std::cout << "Error reading directional light\n";
+    return;
+  }
+
+  lights.push_back(std::shared_ptr<Light>(
+      new DirectionalLight(*intensityVec, *positionVec)));
 }
 
 std::shared_ptr<Background> XmlParser::parseColorBackground(
@@ -272,9 +383,9 @@ std::shared_ptr<vec3> XmlParser::getVector(TiXmlNode *parent,
   for (TiXmlAttribute *attr = vecNode->ToElement()->FirstAttribute();
        attr != nullptr; attr = attr->Next()) {
     std::string attrName(attr->Name());
-    if (attrName == "x") attr->QueryDoubleValue(&xVal);
-    if (attrName == "y") attr->QueryDoubleValue(&yVal);
-    if (attrName == "z") attr->QueryDoubleValue(&zVal);
+    if (attrName == "x" || attrName == "r") attr->QueryDoubleValue(&xVal);
+    if (attrName == "y" || attrName == "g") attr->QueryDoubleValue(&yVal);
+    if (attrName == "z" || attrName == "b") attr->QueryDoubleValue(&zVal);
   }
 
   return std::make_shared<vec3>(vec3(xVal, yVal, zVal));

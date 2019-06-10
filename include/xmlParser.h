@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "config.h"
 #include "integrator.h"
+#include "light.h"
 #include "material.h"
 #include "scene.h"
 #include "tinyxml.h"
@@ -16,6 +17,7 @@ class XmlParser {
   std::shared_ptr<TiXmlDocument> m_doc;
   TiXmlElement *m_topElement = nullptr;
   std::vector<std::shared_ptr<Material>> materials;
+  std::vector<std::shared_ptr<Light>> lights;
   std::shared_ptr<Camera> camera;
 
   XmlParser(std::string _filename) : m_filename(_filename) {
@@ -34,6 +36,13 @@ class XmlParser {
   std::shared_ptr<vec3> getVector(TiXmlNode *parent,
                                   const std::string &vecName);
   void addMaterial(TiXmlNode *parent);
+  void addFlatMaterial(TiXmlNode *parent);
+  void addBlinnMaterial(TiXmlNode *parent);
+  void addLight(TiXmlNode *parent);
+  void addAmbientLight(TiXmlNode *parent);
+  void addPointLight(TiXmlNode *parent);
+  void addSpotLight(TiXmlNode *parent);
+  void addDirectionalLight(TiXmlNode *parent);
   Pixel parseColor(TiXmlNode *parent);
 
  public:
