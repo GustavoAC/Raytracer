@@ -42,14 +42,16 @@ class Sphere : public Shape {
 
     float t1 = (-b + std::sqrt(delta)) / (2 * a);
     float t2 = (-b - std::sqrt(delta)) / (2 * a);
-    float bestT = std::min(t1, t2);
 
-    si->t = bestT;
-    si->p = ray(bestT);
+    if (t1 > t2) std::swap(t1, t2);
+    if (t1 > ray.maxT || t2 < 0) return false;
+
+    si->t = t1;
+    si->p = ray(t1);
     si->primitive = this;
     si->wo = unit_vector(origin - direction);
 
-    vec3 hitCoord = ray(bestT);
+    vec3 hitCoord = ray(t1);
     si->n = hitCoord - m_center;
 
     return true;

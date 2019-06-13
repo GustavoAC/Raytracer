@@ -1,5 +1,5 @@
 #pragma once
-
+#include <limits>
 #include "vec3.h"
 
 class Ray {
@@ -15,6 +15,9 @@ class Ray {
       : origin(_origin), direction(_direction), i(_i), j(_j) {
     /* Empty */
   }
+
+  //! Maximum acceptable t value for the ray
+  float maxT = std::numeric_limits<float>::max();
 
   vec3 operator()(float t) const { return origin + (t * direction); }
 

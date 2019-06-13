@@ -8,7 +8,6 @@ Pixel BlinnPhongIntegrator::Li(const Ray& ray, const Scene& scene,
                                Sampler& sampler) const {
   SurfaceInteraction isect;
   if (!scene.intersect(ray, &isect)) {
-    // This might be just:
     return scene.background->getColor(ray.getI(), ray.getJ());
   }
 

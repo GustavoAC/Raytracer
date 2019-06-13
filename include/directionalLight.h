@@ -19,7 +19,7 @@ class DirectionalLight : public Light {
 
     SurfaceInteraction si;
     si.p = position;
-    *vt = VisibilityTester(isect, si);
+    *vt = VisibilityTester(isect, si, false);
 
     return intensity;
   }
