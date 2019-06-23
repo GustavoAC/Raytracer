@@ -83,4 +83,12 @@ class Sphere : public Shape {
 
     return (delta >= 0.0);
   }
+
+  // Get bounds for shape
+  virtual Bounds3 getBounds() const {
+    vec3 radiusVec(m_radius, m_radius, m_radius);
+    point3 upCorner = m_center + radiusVec;
+    point3 bottomCorner = m_center - radiusVec;
+    return Bounds3(bottomCorner, upCorner);
+  }
 };

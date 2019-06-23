@@ -1,19 +1,23 @@
 #include "xmlParser.h"
+#include <sstream>
 #include <unordered_map>
-#include "aggregatePrimitive.h"
 #include "ambientLight.h"
 #include "blinnMaterial.h"
 #include "blinnPhongIntegrator.h"
+#include "bvhaccel.h"
+#include "cyTriMesh.h"
 #include "depthMapIntegrator.h"
 #include "directionalLight.h"
 #include "flatIntegrator.h"
 #include "flatMaterial.h"
+#include "listPrimitive.h"
 #include "normalMapIntegrator.h"
 #include "orthographic_camera.h"
 #include "perspective_camera.h"
 #include "pointLight.h"
 #include "sphere.h"
 #include "spotLight.h"
+#include "trianglemesh.h"
 
 std::shared_ptr<Camera> XmlParser::getCamera() {
   if (m_topElement == nullptr) return nullptr;
@@ -116,10 +120,10 @@ std::shared_ptr<Scene> XmlParser::getScene() {
     }
   }
 
-  AggregatePrimitive *ap = new AggregatePrimitive();
-  ap->primitives = primitives;
+  ListPrimitive *ap = new ListPrimitive(primitives);
   return std::make_shared<Scene>(
       Scene(std::shared_ptr<Primitive>(ap), lights, background));
+  return nullptr;
 }
 
 std::shared_ptr<Integrator> XmlParser::getIntegrator() {
@@ -345,6 +349,7 @@ std::shared_ptr<Primitive> XmlParser::getPrimitive(TiXmlElement *parent) {
 
   auto type = std::string(typeAttr->Value());
   if (type == "sphere") return getSphere(parent);
+  if (type == "trianglemesh") return getTriangleMesh(parent);
 
   return nullptr;
 }
@@ -372,6 +377,120 @@ std::shared_ptr<Primitive> XmlParser::getSphere(TiXmlElement *parent) {
   }
 
   return nullptr;
+}
+
+std::shared_ptr<Primitive> XmlParser::getTriangleMesh(TiXmlElement *parent) {
+  if (parent == nullptr) return nullptr;
+
+  auto materialAttr = getAttribute(parent, "material");
+  if (materialAttr == nullptr) return nullptr;
+  auto materialName = std::string(materialAttr->Value());
+
+  std::shared_ptr<Material> selectedMaterial = nullptr;
+  for (auto &mat : materials)
+    if (mat->getName() == materialName) {
+      selectedMaterial = mat;
+      break;
+    }
+  if (selectedMaterial == nullptr) return nullptr;
+
+  auto fileNode = getChildWithName(parent, "filename");
+  if (fileNode != nullptr) {
+    auto filenameAttr = getAttribute(fileNode->ToElement(), "value");
+    if (filenameAttr != nullptr)
+      return getTriangleMeshFromFile(filenameAttr->Value(), selectedMaterial);
+    else
+      return nullptr;
+  }
+
+  std::cout << "parsing triangle manually\n";
+
+  auto nTrianglesNode = getChildWithName(parent, "ntriangles");
+  auto indicesNode = getChildWithName(parent, "indices");
+  auto verticesNode = getChildWithName(parent, "vertices");
+  auto normalsNode = getChildWithName(parent, "normals");
+  // auto uvNode = getChildWithName(parent, "uv");
+  if (nTrianglesNode == nullptr || indicesNode == nullptr ||
+      verticesNode == nullptr || normalsNode == nullptr)
+    return nullptr;
+
+  auto nTrianglesAttr = getAttribute(nTrianglesNode->ToElement(), "value");
+  auto indicesAttr = getAttribute(indicesNode->ToElement(), "value");
+  auto verticesAttr = getAttribute(verticesNode->ToElement(), "value");
+  auto normalsAttr = getAttribute(normalsNode->ToElement(), "value");
+  // auto uvAttr = getAttribute(uvNode->ToElement(), "value");
+
+  if (nTrianglesAttr == nullptr || indicesAttr == nullptr ||
+      verticesAttr == nullptr || normalsAttr == nullptr)
+    return nullptr;
+
+  int nTriangles;
+  nTrianglesAttr->QueryIntValue(&nTriangles);
+  auto indices = getIntVecFromString(indicesAttr->Value());
+  auto vertices = getVecVecFromString(verticesAttr->Value());
+  auto normals = getVecVecFromString(normalsAttr->Value());
+
+  TriangleMesh mesh(nTriangles, indices.data(), vertices.size(),
+                    vertices.data(), normals.data(), selectedMaterial);
+  return createBVHFromTriangleMesh(mesh);
+
+  return nullptr;
+}
+
+std::vector<int> XmlParser::getIntVecFromString(const std::string &string) {
+  std::stringstream ss(string);
+  std::vector<int> ret;
+  int n;
+  while (ss >> n) ret.push_back(n);
+  return ret;
+}
+
+std::vector<vec3> XmlParser::getVecVecFromString(const std::string &string) {
+  std::stringstream ss(string);
+  std::vector<vec3> ret;
+  float x, y, z;
+  while (ss >> x >> y >> z) ret.push_back(vec3(x, y, z));
+  return ret;
+}
+
+std::shared_ptr<Primitive> XmlParser::getTriangleMeshFromFile(
+    const std::string &filename, const std::shared_ptr<Material> &material) {
+  cy::TriMesh cyMesh;
+  if (!cyMesh.LoadFromFileObj(filename.c_str())) return nullptr;
+
+  auto nTri = cyMesh.NF();
+  auto nVer = cyMesh.NV();
+
+  std::vector<int> indices;
+  for (auto i = 0u; i < nTri; ++i) {
+    auto &triangle = cyMesh.F(i);
+    for (auto j = 0u; j < 3; ++j) {
+      indices.push_back(triangle.v[j]);
+    }
+  }
+
+  std::vector<point3> vertices;
+  for (auto i = 0u; i < nVer; ++i) {
+    const auto &triangle = cyMesh.V(i);
+    vertices.push_back(point3(triangle[0], triangle[1], triangle[2]));
+  }
+
+  auto numNormals = cyMesh.NVN();
+  std::vector<vec3> normals;
+  for (auto i = 0u; i < numNormals; ++i) {
+    const auto &normal = cyMesh.VN(i);
+    normals.push_back(vec3(normal[0], normal[1], normal[2]));
+  }
+
+  TriangleMesh mesh(nTri, indices.data(), nVer, vertices.data(), normals.data(),
+                    material);
+  return createBVHFromTriangleMesh(mesh);
+}
+
+std::shared_ptr<Primitive> XmlParser::createBVHFromTriangleMesh(
+    const TriangleMesh &mesh) {
+  auto triangles = TriangleMesh::getTriangles(mesh);
+  return std::shared_ptr<Primitive>(new BVHAccel(triangles));
 }
 
 std::shared_ptr<vec3> XmlParser::getVector(TiXmlNode *parent,

@@ -9,6 +9,7 @@
 #include "material.h"
 #include "scene.h"
 #include "tinyxml.h"
+#include "trianglemesh.h"
 #include "vec3.h"
 
 class XmlParser {
@@ -33,8 +34,15 @@ class XmlParser {
   TiXmlAttribute *getAttribute(TiXmlElement *parent, const std::string &name);
   std::shared_ptr<Primitive> getPrimitive(TiXmlElement *parent);
   std::shared_ptr<Primitive> getSphere(TiXmlElement *parent);
+  std::shared_ptr<Primitive> getTriangleMesh(TiXmlElement *parent);
+  std::shared_ptr<Primitive> getTriangleMeshFromFile(
+      const std::string &filename, const std::shared_ptr<Material> &material);
+  std::shared_ptr<Primitive> createBVHFromTriangleMesh(
+      const TriangleMesh &mesh);
   std::shared_ptr<vec3> getVector(TiXmlNode *parent,
                                   const std::string &vecName);
+  std::vector<int> getIntVecFromString(const std::string &string);
+  std::vector<vec3> getVecVecFromString(const std::string &string);
   void addMaterial(TiXmlNode *parent);
   void addFlatMaterial(TiXmlNode *parent);
   void addBlinnMaterial(TiXmlNode *parent);

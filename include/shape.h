@@ -1,9 +1,10 @@
 #pragma once
+#include "bounds3.h"
 #include "geometricPrimitive.h"
 
 class Shape : public GeometricPrimitive {
  public:
-  Shape(const std::shared_ptr<Material>& _material)
+  Shape(const std::shared_ptr<Material>& _material = nullptr)
       : GeometricPrimitive(_material) {}
 
   virtual bool intersect(const Ray& r, SurfaceInteraction* si) const = 0;

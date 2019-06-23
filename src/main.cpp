@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include "pixel.h"
 #include "ray.h"
@@ -7,6 +8,7 @@
 #include "sphere.h"
 
 int main(int argc, char const* argv[]) {
+  srand(time(nullptr));
   if (argc < 2) {
     std::cout << "Please insert the xml description path as an argument"
               << std::endl;
