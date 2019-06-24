@@ -299,14 +299,14 @@ void XmlParser::addSpotLight(TiXmlNode *parent) {
 
 void XmlParser::addDirectionalLight(TiXmlNode *parent) {
   auto intensityVec = getVector(parent, "intensity");
-  auto positionVec = getVector(parent, "position");
-  if (intensityVec == nullptr || positionVec == nullptr) {
+  auto directionVec = getVector(parent, "direction");
+  if (intensityVec == nullptr || directionVec == nullptr) {
     std::cout << "Error reading directional light\n";
     return;
   }
 
   lights.push_back(std::shared_ptr<Light>(
-      new DirectionalLight(*intensityVec, *positionVec)));
+      new DirectionalLight(*intensityVec, *directionVec)));
 }
 
 std::shared_ptr<Background> XmlParser::parseColorBackground(
@@ -490,7 +490,8 @@ std::shared_ptr<Primitive> XmlParser::getTriangleMeshFromFile(
 std::shared_ptr<Primitive> XmlParser::createBVHFromTriangleMesh(
     const TriangleMesh &mesh) {
   auto triangles = TriangleMesh::getTriangles(mesh);
-  return std::shared_ptr<Primitive>(new BVHAccel(triangles));
+  // return std::shared_ptr<Primitive>(new BVHAccel(triangles));
+  return std::shared_ptr<Primitive>(new ListPrimitive(triangles));
 }
 
 std::shared_ptr<vec3> XmlParser::getVector(TiXmlNode *parent,

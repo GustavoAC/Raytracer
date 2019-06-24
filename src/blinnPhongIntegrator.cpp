@@ -11,6 +11,10 @@ Pixel BlinnPhongIntegrator::Li(const Ray& ray, const Scene& scene,
     return scene.background->getColor(ray.getI(), ray.getJ());
   }
 
+  // std::cout << "normal " << isect.n << " point " << isect.p << " t " <<
+  // isect.t
+  //           << " wo " << isect.wo << "\n";
+
   // Get material
   BlinnMaterial* bm = (BlinnMaterial*)(isect.primitive->getMaterial().get());
   auto ka = bm->getKa();

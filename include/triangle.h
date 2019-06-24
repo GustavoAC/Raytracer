@@ -8,7 +8,7 @@
 #include "surfaceInteraction.h"
 #include "trianglemesh.h"
 
-#define EPSILON 0.001
+#define EPSILON 0.000001
 
 class Triangle : public Shape {
  private:
@@ -21,7 +21,7 @@ class Triangle : public Shape {
 
  public:
   Triangle(std::shared_ptr<const TriangleMesh> mesh,
-           std::shared_ptr<Material> material, int tri_id, bool bfc = false)
+           std::shared_ptr<Material> material, int tri_id, bool bfc = true)
       : Shape(material), mesh(mesh), backface_cull(bfc) {
     v = &mesh->vertexIndices[3 * tri_id];
   }
@@ -33,7 +33,6 @@ class Triangle : public Shape {
     vec3 edge1, edge2, tvec, pvec, qvec;
     float det, invDet, t, u, vFloat;
 
-    // pvec = h
     edge1 = v1 - v0;
     edge2 = v2 - v0;
     pvec = cross(ray.getDirection(), edge2);
@@ -45,11 +44,11 @@ class Triangle : public Shape {
 
       tvec = ray.getOrigin() - v0;
       u = dot(tvec, pvec);
-      if (u < 0.0 || u > 1.0) return false;
+      if (u < 0.0 || u > det) return false;
 
       qvec = cross(tvec, edge1);
       vFloat = dot(ray.getDirection(), qvec);
-      if (vFloat < 0.0 || u + vFloat > 1.0) return false;
+      if (vFloat < 0.0 || u + vFloat > det) return false;
 
       t = dot(edge2, qvec);
       invDet = 1.0 / det;
@@ -72,7 +71,7 @@ class Triangle : public Shape {
       t = dot(edge2, qvec) * invDet;
     }
 
-    if (t > ray.maxT) return false;
+    if (t > ray.maxT || t < 0) return false;
     if (isect != nullptr) {
       isect->p = ray(t);
       isect->uv = Point2(u, vFloat);
