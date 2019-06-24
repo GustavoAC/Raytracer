@@ -61,10 +61,6 @@
             <intensity r="0.9" g="0.9" b="0.9"/>
             <direction x="5" y="-5" z="10"/>
         </light>
-        <light type="point" name="point_light">
-            <intensity r="0.7" g="0.7" b="0.7"/>
-            <position x="0" y="-90" z="30"/>
-        </light>
     </scene>
 
     <!--- Running setup -->

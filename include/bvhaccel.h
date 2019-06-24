@@ -24,9 +24,9 @@ class BVHAccel : public AggregatePrimitive {
 };
 
 bool BVHAccel::intersect(const Ray& r, SurfaceInteraction* si) const {
-  std::cout << bounds.pMin[0] << " " << bounds.pMax[0] << " | "
-            << bounds.pMin[1] << " " << bounds.pMax[1] << " | "
-            << bounds.pMin[2] << " " << bounds.pMax[2] << "\n";
+  // std::cout << bounds.pMin[0] << " " << bounds.pMax[0] << " | "
+  //           << bounds.pMin[1] << " " << bounds.pMax[1] << " | "
+  //           << bounds.pMin[2] << " " << bounds.pMax[2] << "\n";
   if (bounds.intersect(r)) {
     SurfaceInteraction siLeft, siRight;
     bool hitLeft = left != nullptr && left->intersect(r, &siLeft);

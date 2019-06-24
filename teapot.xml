@@ -34,12 +34,6 @@
         <object type="trianglemesh" name="teapot" material="grey">
             <filename value="teapot.obj"/>
         </object>
-        <object type="trianglemesh" name="floor" material="cyan">
-            <ntriangles value="2"/>
-            <indices value="0 1 2 0 2 3"/>
-            <vertices value="-30.0 30.5 -1.0 30.0 30.5 -1.0 30.0,-30.5 -1.0 -30.0,-30.5 -1.0"/>
-            <normals value="0 0 1 0 0 1 0 0 1 0 0 1"/>
-        </object>
 
         <!--- Library of materials -->
         <material type="blinn" name="grey">
@@ -59,9 +53,13 @@
         <light type="ambient" name="ambient_light">
             <intensity r="0.1" g="0.1" b="0.1"/>
         </light>
-        <light type="point" name="point_light">
-            <intensity r="0.7" g="0.7" b="0.7"/>
-            <position x="50" y="50" z="50"/>
+        <light type="directional" name="dir1">
+            <intensity r="0.9" g="0.5" b="0.45"/>
+            <direction x="-5" y="-5" z="10"/>
+        </light>
+        <light type="directional" name="dir2">
+            <intensity r="0.9" g="0.9" b="0.9"/>
+            <direction x="5" y="-5" z="10"/>
         </light>
     </scene>
 

@@ -490,8 +490,8 @@ std::shared_ptr<Primitive> XmlParser::getTriangleMeshFromFile(
 std::shared_ptr<Primitive> XmlParser::createBVHFromTriangleMesh(
     const TriangleMesh &mesh) {
   auto triangles = TriangleMesh::getTriangles(mesh);
-  // return std::shared_ptr<Primitive>(new BVHAccel(triangles));
-  return std::shared_ptr<Primitive>(new ListPrimitive(triangles));
+  return std::shared_ptr<Primitive>(new BVHAccel(triangles));
+  // return std::shared_ptr<Primitive>(new ListPrimitive(triangles));
 }
 
 std::shared_ptr<vec3> XmlParser::getVector(TiXmlNode *parent,

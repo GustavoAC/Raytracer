@@ -41,18 +41,15 @@ class Bounds3 {
   };
 
   inline bool intersect(const Ray& ray) const {
-    // for (int i = 0; i < 3; ++i) {
-    //   float invD = 1.0f / ray.getDirection()[i];
-    //   float t0 = (pMin[i] - ray.getOrigin()[i]) * invD;
-    //   float t1 = (pMax[i] - ray.getOrigin()[i]) * invD;
-    //   if (invD < 0) std::swap(t0, t1);
-    //   std::cout << "t0 t1: " << t0 << " " << t1 << "\n";
-    //   if (t0 > t1) {
-    //     std::cout << ">>false bounds3 intersect";
-    //     return false;
-    //   }
-    // }
-    // return true;
+    for (int i = 0; i < 3; ++i) {
+      float invD = 1.0f / ray.getDirection()[i];
+      float t0 = (pMin[i] - ray.getOrigin()[i]) * invD;
+      float t1 = (pMax[i] - ray.getOrigin()[i]) * invD;
+      if (invD < 0) std::swap(t0, t1);
+      t0 = (t0 < 0) ? 0 : t0;
+      // std::cout << "t0 t1: " << t0 << " " << t1 << "\n";
+      if (t0 > t1) return false;
+    }
     return true;
   }
 };
